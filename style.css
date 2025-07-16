@@ -5,15 +5,37 @@ body {
     height: 100vh;
     margin: 0;
     background-color: #f0f0f0;
-    flex-direction: column;
+    font-family: sans-serif;
 }
 
-#score-container {
-    margin-bottom: 20px;
-    text-align: center;
-    font-family: sans-serif;
+#main-container {
+    display: flex;
+    align-items: flex-start; /* Align items to the top */
 }
 
 #game-container {
     border: 1px solid black;
+    position: relative; /* Needed for absolute positioning of the line */
+}
+
+#game-ui-container {
+    display: flex;
+    flex-direction: column;
+    margin-left: 20px; /* Add space between game and UI */
+}
+
+#score-container, #next-fruit-container {
+    background-color: #e0e0e0;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    text-align: center;
+    width: 150px; /* Set a fixed width for UI containers */
+}
+
+#next-fruit-display {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80px; /* Adjust as needed */
 }

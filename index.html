@@ -5,12 +5,19 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-    <h1>Suika Game Clone</h1>
-    <div id="score-container">
-        <h2>Score: <span id="current-score">0</span></h2>
-        <h2>High Score: <span id="high-score">0</span></h2>
+    <div id="main-container">
+        <div id="game-container"></div>
+        <div id="game-ui-container">
+            <div id="score-container">
+                <h2>Score: <span id="current-score">0</span></h2>
+                <h2>High Score: <span id="high-score">0</span></h2>
+            </div>
+            <div id="next-fruit-container">
+                <h2>Next</h2>
+                <div id="next-fruit-display"></div>
+            </div>
+        </div>
     </div>
-    <div id="game-container"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.18.0/matter.min.js"></script>
     <script src="script.js"></script>
 </body>

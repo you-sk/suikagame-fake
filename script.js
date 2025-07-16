@@ -1,11 +1,11 @@
 // Matter.js module aliases
 const { Engine, Render, World, Bodies, Body, Events, Vector } = Matter;
 
-// Game container
+// Game UI elements
 const gameContainer = document.getElementById('game-container');
 const currentScoreEl = document.getElementById('current-score');
 const highScoreEl = document.getElementById('high-score');
-
+const nextFruitDisplay = document.getElementById('next-fruit-display');
 
 // Game dimensions
 const gameWidth = 400;
@@ -32,6 +32,20 @@ const render = Render.create({
     }
 });
 
+// --- Game Over Line ---
+const gameOverLineY = 100;
+Events.on(render, 'afterRender', function() {
+    const context = render.context;
+    context.beginPath();
+    context.moveTo(0, gameOverLineY);
+    context.lineTo(gameWidth, gameOverLineY);
+    context.strokeStyle = 'red';
+    context.setLineDash([5, 5]);
+    context.stroke();
+    context.setLineDash([]);
+});
+
+
 // Create walls
 const wallOptions = {
     isStatic: true,
@@ -49,11 +63,12 @@ World.add(world, [
 // --- Fruits ---
 const fruitRadius = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
 const fruitColors = ['#ffdddd', '#ffbbbb', '#ff9999', '#ff7777', '#ff5555', '#ff3333', '#ff1111', '#ff0000', '#cc0000', '#990000', '#660000'];
-const fruitScores = [1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66]; // Scores for merging each fruit level
+const fruitScores = [1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66];
 
-function createFruit(x, y, level) {
+function createFruit(x, y, level, isStatic = false) {
     const radius = fruitRadius[level];
     const fruit = Bodies.circle(x, y, radius, {
+        isStatic: isStatic,
         restitution: 0.3,
         friction: 0.5,
         render: {
@@ -69,15 +84,34 @@ function createFruit(x, y, level) {
 
 // --- Game Logic ---
 let currentFruit = null;
-let currentFruitLevel = 0;
+let nextFruitLevel = 0;
 let gameEnded = false;
+
+function prepareNextFruit() {
+    nextFruitLevel = Math.floor(Math.random() * 5);
+    updateNextFruitDisplay();
+}
 
 function spawnNextFruit() {
     if (gameEnded) return;
-    currentFruitLevel = Math.floor(Math.random() * 5); // Spawn smaller fruits initially
-    currentFruit = createFruit(gameWidth / 2, 50, currentFruitLevel);
-    Body.setStatic(currentFruit, true); // Make it static until dropped
+    currentFruit = createFruit(gameWidth / 2, 50, nextFruitLevel, true);
     World.add(world, currentFruit);
+    prepareNextFruit(); // Prepare the next one
+}
+
+function updateNextFruitDisplay() {
+    nextFruitDisplay.innerHTML = ''; // Clear previous
+    const radius = fruitRadius[nextFruitLevel];
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute('width', radius * 2);
+    svg.setAttribute('height', radius * 2);
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute('cx', radius);
+    circle.setAttribute('cy', radius);
+    circle.setAttribute('r', radius);
+    circle.setAttribute('fill', fruitColors[nextFruitLevel]);
+    svg.appendChild(circle);
+    nextFruitDisplay.appendChild(svg);
 }
 
 function updateScore(points) {
@@ -100,7 +134,8 @@ gameContainer.addEventListener('mousemove', (event) => {
     if (currentFruit) {
         const rect = gameContainer.getBoundingClientRect();
         const x = event.clientX - rect.left;
-        Body.setPosition(currentFruit, { x: Math.max(20 + fruitRadius[currentFruitLevel], Math.min(x, gameWidth - 20 - fruitRadius[currentFruitLevel])), y: 50 });
+        const radius = fruitRadius[currentFruit.plugin.level];
+        Body.setPosition(currentFruit, { x: Math.max(20 + radius, Math.min(x, gameWidth - 20 - radius)), y: 50 });
     }
 });
 
@@ -146,19 +181,17 @@ Events.on(engine, 'collisionStart', (event) => {
 });
 
 // --- Game Over ---
-const gameOverLineY = 100;
 Events.on(engine, 'afterUpdate', () => {
     if (gameEnded) return;
     const fruits = World.allBodies(world).filter(body => body.label === 'fruit' && !body.isStatic);
     for (let i = 0; i < fruits.length; i++) {
-        if (fruits[i].position.y < gameOverLineY && fruits[i].velocity.y < 0.01) {
-             // A simple check, can be improved
+        if (fruits[i].position.y - fruitRadius[fruits[i].plugin.level] < gameOverLineY && fruits[i].velocity.y < 0.01) {
             console.log("Game Over");
             gameEnded = true;
             Engine.clear(engine);
             Render.stop(render);
             alert(`Game Over! Your score: ${currentScore}`);
-            // No need to break, gameEnded flag will stop further actions
+            break;
         }
     }
 });
@@ -168,5 +201,6 @@ Events.on(engine, 'afterUpdate', () => {
 Engine.run(engine);
 Render.run(render);
 
-// Initial fruit
+// Initial setup
+prepareNextFruit();
 spawnNextFruit();
