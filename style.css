@@ -10,18 +10,18 @@ body {
 
 #main-container {
     display: flex;
-    align-items: flex-start; /* Align items to the top */
+    align-items: flex-start;
 }
 
 #game-container {
     border: 1px solid black;
-    position: relative; /* Needed for absolute positioning of the line */
+    position: relative;
 }
 
 #game-ui-container {
     display: flex;
     flex-direction: column;
-    margin-left: 20px; /* Add space between game and UI */
+    margin-left: 20px;
 }
 
 #score-container, #next-fruit-container {
@@ -30,12 +30,51 @@ body {
     border-radius: 8px;
     margin-bottom: 10px;
     text-align: center;
-    width: 150px; /* Set a fixed width for UI containers */
+    width: 150px;
 }
 
 #next-fruit-display {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 80px; /* Adjust as needed */
+    min-height: 80px;
+}
+
+#game-over-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+#game-over-screen h2 {
+    margin: 0;
+    font-size: 3em;
+}
+
+#game-over-screen p {
+    font-size: 1.5em;
+    margin: 10px 0;
+}
+
+#restart-button {
+    padding: 10px 20px;
+    font-size: 1.2em;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #4CAF50; /* Green */
+    color: white;
+}
+
+#restart-button:hover {
+    background-color: #45a049;
 }
