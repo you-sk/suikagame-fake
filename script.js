@@ -3,10 +3,18 @@ const { Engine, Render, World, Bodies, Body, Events, Vector } = Matter;
 
 // Game container
 const gameContainer = document.getElementById('game-container');
+const currentScoreEl = document.getElementById('current-score');
+const highScoreEl = document.getElementById('high-score');
+
 
 // Game dimensions
 const gameWidth = 400;
 const gameHeight = 600;
+
+// Score
+let currentScore = 0;
+let highScore = localStorage.getItem('suika-high-score') || 0;
+updateScoreDisplay();
 
 // Create an engine
 const engine = Engine.create();
@@ -41,6 +49,7 @@ World.add(world, [
 // --- Fruits ---
 const fruitRadius = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
 const fruitColors = ['#ffdddd', '#ffbbbb', '#ff9999', '#ff7777', '#ff5555', '#ff3333', '#ff1111', '#ff0000', '#cc0000', '#990000', '#660000'];
+const fruitScores = [1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66]; // Scores for merging each fruit level
 
 function createFruit(x, y, level) {
     const radius = fruitRadius[level];
@@ -61,12 +70,28 @@ function createFruit(x, y, level) {
 // --- Game Logic ---
 let currentFruit = null;
 let currentFruitLevel = 0;
+let gameEnded = false;
 
 function spawnNextFruit() {
+    if (gameEnded) return;
     currentFruitLevel = Math.floor(Math.random() * 5); // Spawn smaller fruits initially
     currentFruit = createFruit(gameWidth / 2, 50, currentFruitLevel);
     Body.setStatic(currentFruit, true); // Make it static until dropped
     World.add(world, currentFruit);
+}
+
+function updateScore(points) {
+    currentScore += points;
+    if (currentScore > highScore) {
+        highScore = currentScore;
+        localStorage.setItem('suika-high-score', highScore);
+    }
+    updateScoreDisplay();
+}
+
+function updateScoreDisplay() {
+    currentScoreEl.textContent = currentScore;
+    highScoreEl.textContent = highScore;
 }
 
 
@@ -90,6 +115,7 @@ gameContainer.addEventListener('click', () => {
 
 // --- Collision Handling ---
 Events.on(engine, 'collisionStart', (event) => {
+    if (gameEnded) return;
     const pairs = event.pairs;
 
     for (let i = 0; i < pairs.length; i++) {
@@ -109,8 +135,10 @@ Events.on(engine, 'collisionStart', (event) => {
 
                     World.remove(world, [bodyA, bodyB]);
                     World.add(world, newFruit);
+                    updateScore(fruitScores[levelA]);
                 } else { // Both are the largest fruit (suika)
                     World.remove(world, [bodyA, bodyB]);
+                    updateScore(fruitScores[levelA]);
                 }
             }
         }
@@ -120,15 +148,17 @@ Events.on(engine, 'collisionStart', (event) => {
 // --- Game Over ---
 const gameOverLineY = 100;
 Events.on(engine, 'afterUpdate', () => {
+    if (gameEnded) return;
     const fruits = World.allBodies(world).filter(body => body.label === 'fruit' && !body.isStatic);
     for (let i = 0; i < fruits.length; i++) {
         if (fruits[i].position.y < gameOverLineY && fruits[i].velocity.y < 0.01) {
              // A simple check, can be improved
             console.log("Game Over");
+            gameEnded = true;
             Engine.clear(engine);
             Render.stop(render);
-            alert("Game Over!");
-            break;
+            alert(`Game Over! Your score: ${currentScore}`);
+            // No need to break, gameEnded flag will stop further actions
         }
     }
 });
