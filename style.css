@@ -4,8 +4,8 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-    background-color: #f0f0f0;
-    font-family: sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Arial', sans-serif;
 }
 
 #main-container {
@@ -75,6 +75,115 @@ body {
     color: white;
 }
 
-#restart-button:hover {
+#restart-button:hover, #menu-button:hover {
     background-color: #45a049;
+}
+
+#menu-button {
+    padding: 10px 20px;
+    font-size: 1.2em;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #2196F3;
+    color: white;
+    margin-left: 10px;
+}
+
+#menu-screen {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    text-align: center;
+    max-width: 500px;
+}
+
+#menu-screen h1 {
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+}
+
+#mode-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.mode-button {
+    padding: 15px 30px;
+    font-size: 1.2em;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.mode-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+}
+
+#achievements-preview {
+    background: rgba(240, 240, 240, 0.5);
+    padding: 20px;
+    border-radius: 10px;
+}
+
+#achievement-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.achievement-icon {
+    width: 50px;
+    height: 50px;
+    background: #ddd;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.achievement-icon.unlocked {
+    background: gold;
+}
+
+.achievement-icon:hover {
+    transform: scale(1.1);
+}
+
+#mode-indicator, #stats-container {
+    background-color: #e0e0e0;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    text-align: center;
+    width: 150px;
+}
+
+#timer-display h3 {
+    color: #ff4444;
+    margin: 5px 0;
+}
+
+#stats-container p {
+    margin: 5px 0;
+}
+
+#achievement-unlock {
+    background: gold;
+    color: #333;
+    padding: 10px;
+    border-radius: 10px;
+    margin: 10px 0;
 }

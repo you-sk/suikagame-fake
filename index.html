@@ -5,15 +5,39 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-    <div id="main-container">
+    <div id="menu-screen">
+        <h1>🍉 Super Suika Game 🍉</h1>
+        <div id="mode-selection">
+            <button class="mode-button" data-mode="classic">Classic Mode</button>
+            <button class="mode-button" data-mode="timeAttack">⏱️ Time Attack (2min)</button>
+            <button class="mode-button" data-mode="endless">♾️ Endless Mode</button>
+        </div>
+        <div id="achievements-preview">
+            <h3>Achievements</h3>
+            <div id="achievement-list"></div>
+        </div>
+    </div>
+    
+    <div id="main-container" style="display: none;">
         <div id="game-container">
             <div id="game-over-screen" style="display: none;">
                 <h2>Game Over</h2>
                 <p>Your Score: <span id="final-score">0</span></p>
+                <div id="achievement-unlock" style="display: none;">
+                    <p>🏆 Achievement Unlocked!</p>
+                    <p id="achievement-name"></p>
+                </div>
                 <button id="restart-button">Restart</button>
+                <button id="menu-button">Menu</button>
             </div>
         </div>
         <div id="game-ui-container">
+            <div id="mode-indicator">
+                <h3 id="current-mode">Classic Mode</h3>
+                <div id="timer-display" style="display: none;">
+                    <h3>Time: <span id="time-remaining">120</span>s</h3>
+                </div>
+            </div>
             <div id="score-container">
                 <h2>Score: <span id="current-score">0</span></h2>
                 <h2>High Score: <span id="high-score">0</span></h2>
@@ -21,6 +45,10 @@
             <div id="next-fruit-container">
                 <h2>Next</h2>
                 <div id="next-fruit-display"></div>
+            </div>
+            <div id="stats-container">
+                <p>Merges: <span id="merge-count">0</span></p>
+                <p>Max Combo: <span id="max-combo">0</span></p>
             </div>
         </div>
     </div>
