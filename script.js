@@ -56,6 +56,7 @@ let rainbowMode = false;
 // Visual effects
 let particles = [];
 let floatingTexts = [];
+let shockwaves = [];
 
 // Achievements system
 const achievements = [
@@ -199,20 +200,33 @@ function createFruit(x, y, level, isStatic = false, isPowerUp = false) {
     const color = rainbowMode ? `hsl(${Math.random() * 360}, 100%, 50%)` : fruitColors[level];
     const fruit = Bodies.circle(x, y, radius, {
         isStatic: isStatic,
-        restitution: 0.3,
-        friction: 0.5,
+        restitution: 0.4,  // より弾力のある挙動
+        friction: 0.3,
+        frictionAir: 0.001,  // 空気抵抗を追加
+        density: 0.001,  // 密度を設定
         render: {
             fillStyle: color,
-            strokeStyle: isPowerUp ? '#FFD700' : 'transparent',
-            lineWidth: isPowerUp ? 3 : 0
+            strokeStyle: isPowerUp ? '#FFD700' : 'rgba(0,0,0,0.1)',
+            lineWidth: isPowerUp ? 3 : 2
         },
         label: isPowerUp ? 'powerup' : 'fruit',
         plugin: {
             level: level,
             isPowerUp: isPowerUp,
-            powerUpType: isPowerUp ? (Math.random() > 0.5 ? 'bomb' : 'rainbow') : null
+            powerUpType: isPowerUp ? (Math.random() > 0.5 ? 'bomb' : 'rainbow') : null,
+            scale: 1,  // アニメーション用のスケール値
+            targetScale: 1,
+            rotation: Math.random() * Math.PI * 2,  // 初期回転角
+            rotationSpeed: (Math.random() - 0.5) * 0.1,  // 回転速度
+            pulsePhase: Math.random() * Math.PI * 2  // パルスアニメーション用
         }
     });
+    
+    // 初期回転を設定
+    if (!isStatic) {
+        Body.setAngularVelocity(fruit, (Math.random() - 0.5) * 0.2);
+    }
+    
     return fruit;
 }
 
@@ -355,15 +369,35 @@ function showFloatingText(position, points, isCombo) {
 }
 
 function createParticles(x, y, level) {
-    for (let i = 0; i < 10; i++) {
+    // より多くのパーティクルで華やかに
+    for (let i = 0; i < 20; i++) {
+        const angle = (Math.PI * 2 * i) / 20;
+        const speed = Math.random() * 8 + 2;
         particles.push({
             x: x,
             y: y,
-            vx: (Math.random() - 0.5) * 5,
-            vy: (Math.random() - 0.5) * 5 - 2,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 3,
             life: 1,
             color: fruitColors[level],
-            size: Math.random() * 5 + 2
+            size: Math.random() * 8 + 3,
+            type: 'circle'
+        });
+    }
+    
+    // スター型パーティクルも追加
+    for (let i = 0; i < 5; i++) {
+        particles.push({
+            x: x,
+            y: y,
+            vx: (Math.random() - 0.5) * 10,
+            vy: (Math.random() - 0.5) * 10 - 5,
+            life: 1,
+            color: '#FFD700',
+            size: Math.random() * 10 + 5,
+            type: 'star',
+            rotation: Math.random() * Math.PI * 2,
+            rotationSpeed: (Math.random() - 0.5) * 0.3
         });
     }
 }
@@ -373,8 +407,14 @@ function updateParticles() {
     particles.forEach(p => {
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.2; // gravity
+        p.vy += 0.3; // gravity
+        p.vx *= 0.98; // air resistance
         p.life -= 0.02;
+        
+        // 回転があるパーティクルは回転を更新
+        if (p.rotation !== undefined) {
+            p.rotation += p.rotationSpeed;
+        }
     });
 }
 
@@ -384,6 +424,25 @@ function updateFloatingTexts() {
         t.y -= 1;
         t.time += 0.02;
         t.opacity = Math.max(0, 1 - t.time);
+    });
+}
+
+function createShockwave(x, y, level) {
+    shockwaves.push({
+        x: x,
+        y: y,
+        radius: fruitRadius[level],
+        maxRadius: fruitRadius[level] * 4,
+        opacity: 0.5,
+        color: fruitColors[level]
+    });
+}
+
+function updateShockwaves() {
+    shockwaves = shockwaves.filter(s => s.opacity > 0);
+    shockwaves.forEach(s => {
+        s.radius += (s.maxRadius - s.radius) * 0.15;
+        s.opacity *= 0.92;
     });
 }
 
@@ -458,6 +517,7 @@ function restartGame() {
     rainbowMode = false;
     particles = [];
     floatingTexts = [];
+    shockwaves = [];
     mergeCount = 0;
     maxCombo = 0;
     bombsUsed = 0;
@@ -497,62 +557,169 @@ function initGame() {
     });
 
     const gameOverLineY = 100;
+    let animationTime = 0;
+    
     Events.on(render, 'afterRender', function() {
         const context = render.context;
+        animationTime += 0.016; // ~60fps
         
-        // Draw game over line
+        // 背景グラデーションアニメーション
+        const gradient = context.createLinearGradient(0, 0, gameWidth, gameHeight);
+        const hue1 = (animationTime * 10) % 360;
+        const hue2 = (hue1 + 60) % 360;
+        gradient.addColorStop(0, `hsla(${hue1}, 30%, 95%, 0.3)`);
+        gradient.addColorStop(1, `hsla(${hue2}, 30%, 95%, 0.3)`);
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, gameWidth, gameHeight);
+        
+        // Draw game over line with glow effect
         if (!gameEnded) {
+            // グロー効果
+            context.shadowColor = 'red';
+            context.shadowBlur = 10;
             context.beginPath();
             context.moveTo(0, gameOverLineY);
             context.lineTo(gameWidth, gameOverLineY);
-            context.strokeStyle = 'red';
+            context.strokeStyle = `rgba(255, 0, 0, ${0.5 + Math.sin(animationTime * 3) * 0.3})`;
+            context.lineWidth = 2;
             context.setLineDash([5, 5]);
             context.stroke();
             context.setLineDash([]);
+            context.shadowBlur = 0;
         }
         
-        // Update and draw particles
-        updateParticles();
-        particles.forEach(p => {
-            context.globalAlpha = p.life;
-            context.fillStyle = p.color;
+        // Draw shockwaves
+        updateShockwaves();
+        shockwaves.forEach(s => {
+            context.save();
+            context.globalAlpha = s.opacity;
+            context.strokeStyle = s.color;
+            context.lineWidth = 3;
+            context.shadowColor = s.color;
+            context.shadowBlur = 10;
             context.beginPath();
-            context.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            context.fill();
+            context.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+            context.stroke();
+            context.restore();
         });
         
-        // Update and draw floating texts
+        // Update and draw particles with enhanced effects
+        updateParticles();
+        particles.forEach(p => {
+            context.save();
+            context.globalAlpha = p.life * p.life; // より自然なフェードアウト
+            
+            if (p.type === 'star') {
+                // スター型パーティクル
+                context.translate(p.x, p.y);
+                context.rotate(p.rotation || 0);
+                context.fillStyle = p.color;
+                context.shadowColor = p.color;
+                context.shadowBlur = 5;
+                drawStar(context, 0, 0, 5, p.size, p.size * 0.5);
+            } else {
+                // 円形パーティクル with グロー
+                context.fillStyle = p.color;
+                context.shadowColor = p.color;
+                context.shadowBlur = p.size;
+                context.beginPath();
+                context.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                context.fill();
+            }
+            context.restore();
+        });
+        
+        // Update and draw floating texts with better animation
         updateFloatingTexts();
         floatingTexts.forEach(t => {
+            context.save();
             context.globalAlpha = t.opacity;
             context.fillStyle = t.color;
-            context.font = 'bold 20px Arial';
+            context.shadowColor = t.color;
+            context.shadowBlur = 5;
+            const scale = 1 + (1 - t.opacity) * 0.5;
+            context.font = `bold ${20 * scale}px Arial`;
             context.textAlign = 'center';
             context.fillText(t.value, t.x, t.y);
+            context.restore();
         });
         
         context.globalAlpha = 1;
         
-        // Draw fruit emojis on fruits
+        // Draw fruits with enhanced visuals
         const bodies = Composite.allBodies(world).filter(body => body.label === 'fruit' || body.label === 'powerup');
         bodies.forEach(body => {
             if (body.plugin && body.plugin.level !== undefined) {
+                const plugin = body.plugin;
+                
+                // アニメーションスケール更新
+                if (!body.isStatic) {
+                    plugin.scale += (plugin.targetScale - plugin.scale) * 0.1;
+                    plugin.targetScale = 1 + Math.sin(animationTime * 2 + plugin.pulsePhase) * 0.02;
+                }
+                
                 context.save();
                 context.translate(body.position.x, body.position.y);
                 context.rotate(body.angle);
-                context.font = `${fruitRadius[body.plugin.level] * 1.5}px Arial`;
+                
+                // 影を描画
+                context.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                context.shadowBlur = 10;
+                context.shadowOffsetY = 5;
+                
+                // スケールアニメーション適用
+                const scale = plugin.scale || 1;
+                context.scale(scale, scale);
+                
+                // 光るエフェクト（パワーアップの場合）
+                if (body.label === 'powerup') {
+                    const glowIntensity = 0.5 + Math.sin(animationTime * 5) * 0.5;
+                    context.shadowColor = '#FFD700';
+                    context.shadowBlur = 20 * glowIntensity;
+                }
+                
+                // フルーツの絵文字を描画
+                context.font = `${fruitRadius[plugin.level] * 1.5}px Arial`;
                 context.textAlign = 'center';
                 context.textBaseline = 'middle';
                 
                 if (body.label === 'powerup') {
-                    context.fillText(body.plugin.powerUpType === 'bomb' ? '💣' : '🌈', 0, 0);
+                    context.fillText(plugin.powerUpType === 'bomb' ? '💣' : '🌈', 0, 0);
                 } else {
-                    context.fillText(fruitEmojis[body.plugin.level], 0, 0);
+                    context.fillText(fruitEmojis[plugin.level], 0, 0);
                 }
+                
                 context.restore();
             }
         });
     });
+    
+    // スター描画関数
+    function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+        let rot = Math.PI / 2 * 3;
+        let x = cx;
+        let y = cy;
+        const step = Math.PI / spikes;
+        
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - outerRadius);
+        
+        for (let i = 0; i < spikes; i++) {
+            x = cx + Math.cos(rot) * outerRadius;
+            y = cy + Math.sin(rot) * outerRadius;
+            ctx.lineTo(x, y);
+            rot += step;
+            
+            x = cx + Math.cos(rot) * innerRadius;
+            y = cy + Math.sin(rot) * innerRadius;
+            ctx.lineTo(x, y);
+            rot += step;
+        }
+        
+        ctx.lineTo(cx, cy - outerRadius);
+        ctx.closePath();
+        ctx.fill();
+    }
 
     World.add(world, [
         Bodies.rectangle(gameWidth / 2, gameHeight, gameWidth, 20, wallOptions),
@@ -571,7 +738,19 @@ function initGame() {
 
     gameContainer.addEventListener('click', () => {
         if (currentFruit) {
+            // 落下アニメーション
+            const dropFruit = currentFruit;
+            dropFruit.plugin.targetScale = 1.2;
+            setTimeout(() => {
+                if (dropFruit.plugin) {
+                    dropFruit.plugin.targetScale = 1;
+                }
+            }, 100);
+            
             Body.setStatic(currentFruit, false);
+            // ランダムな初期回転を追加
+            Body.setAngularVelocity(currentFruit, (Math.random() - 0.5) * 0.3);
+            
             currentFruit = null;
             playSound('drop');
             setTimeout(spawnNextFruit, 1000);
@@ -614,9 +793,21 @@ function initGame() {
                 createParticles(mergePosition.x, mergePosition.y, level);
                 playSound('merge');
                 
+                // 衝撃波エフェクト
+                createShockwave(mergePosition.x, mergePosition.y, level);
+                
                 if (level < fruitRadius.length - 1) {
                     const newLevel = level + 1;
                     const newFruit = createFruit(mergePosition.x, mergePosition.y, newLevel);
+                    
+                    // 新しいフルーツに弾むアニメーション
+                    newFruit.plugin.targetScale = 1.5;
+                    setTimeout(() => {
+                        if (newFruit.plugin) {
+                            newFruit.plugin.targetScale = 1;
+                        }
+                    }, 200);
+                    
                     World.remove(world, [bodyA, bodyB]);
                     World.add(world, newFruit);
                     updateScore(fruitScores[level], mergePosition);
@@ -628,6 +819,7 @@ function initGame() {
                     updateScore(fruitScores[level] * 2, mergePosition); // Bonus for max level
                     // Extra particles for max level merge
                     createParticles(mergePosition.x, mergePosition.y, level);
+                    createShockwave(mergePosition.x, mergePosition.y, level);
                 }
             }
         }
